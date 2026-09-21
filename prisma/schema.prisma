@@ -1,0 +1,147 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int               @id @default(autoincrement())
+  username        String            
+  password        String
+  role            Role
+  appKey          String
+  nasabah         Nasabah?
+  adminBank       AdminBank?
+  @@unique([username, appKey])
+}
+
+model Nasabah{
+  id              Int                @id @default(autoincrement())
+  namaNasabah     String
+  alamat          String
+  telefon         String
+  saldoPoin       Float
+  userId          Int                @unique
+  foto            String?
+  tanggalLahir    DateTime?
+  appKey          String
+  user            User               @relation(fields: [userId], references: [id])
+  setorSampah     SetorSampah[]
+  penukaranPoin   PenukaranPoin[]
+} 
+
+model AdminBank {
+  id                       Int                @id @default(autoincrement())
+  namaUnit                 String 
+  namaPengelola            String
+  telefon                  String
+  appKey                   String
+  userId                   Int                @unique
+  user                     User               @relation(fields: [userId], references: [id])
+  setorSampah              SetorSampah[]
+}
+
+model KategoriSampah {
+  id                        Int             @id @default(autoincrement())
+  namaKategori              String
+  hargaPerKg                Float
+  poinPerKg                 Float
+  jenis                     JenisSampah
+  foto                      String?
+  appKey                    String
+  detailSetor               DetailSetor[]
+}
+
+model Hadiah {
+  id                        Int                @id @default(autoincrement())
+  namaHadiah                String
+  deskripsi                 String?
+  poinDibutuhkan            Int
+  stok                      Int
+  foto                      String?
+  appKey                    String
+  penukaranPoin             PenukaranPoin[]
+}
+
+model SetorSampah {
+  id                      Int                   @id @default(autoincrement())
+  kodeSetor               String                
+  tanggal                 DateTime
+  status                  Status
+  catatanAdmin            String?
+  nasabahId               Int
+  adminBankId             Int?
+  appKey                  String
+  nasabah                 Nasabah               @relation(fields: [nasabahId], references: [id])
+  adminBank               AdminBank?            @relation(fields: [adminBankId], references: [id])
+  detailSetor             DetailSetor[]
+  @@unique([kodeSetor, appKey])
+}
+
+model DetailSetor {
+  id                      Int                   @id @default(autoincrement())
+  beratKg                 Float
+  subTotalPoin            Float
+  setorSampahId           Int
+  kategoriSampahId        Int
+  appKey                  String
+  setorSampah             SetorSampah           @relation(fields: [setorSampahId], references: [id])
+  kategoriSampah          KategoriSampah        @relation(fields: [kategoriSampahId], references: [id])
+}
+
+model PenukaranPoin{
+  id                      Int                   @id @default(autoincrement())
+  kodePenukaran           String                
+  tanggal                 DateTime
+  poinTerpakai            Float
+  status                  StatusPenukaran
+  nasabahId               Int
+  hadiahId                Int
+  appKey                  String
+  nasabah                 Nasabah               @relation(fields: [nasabahId], references: [id])
+  hadiah                  Hadiah                @relation(fields: [hadiahId], references: [id])
+  @@unique([kodePenukaran, appKey])
+}
+
+model AppMaker {
+  id                    Int               @id @default(autoincrement())
+  email                 String            @unique
+  password              String
+  namaSiswa             String
+  kelas                 String
+  namaApp               String
+  appKey                String            @unique
+  createdAt             DateTime          @default(now())
+}
+
+enum StatusPenukaran {
+  DIPROSES               @map("diproses")
+  SELESAI                @map("selesai")
+}
+
+enum Status {
+  MENUNGGU_KONFIRMASI               @map("menunggu_konfirmasi")
+  DIVERIFIKASI                      @map("diverifikasi")
+  DITOLAK                           @map("ditolak")
+  SELESAI                           @map("selesai")
+}
+
+enum JenisSampah{
+  PLASTIK                         @map("plastik")
+  KERTAS                          @map("kertas")
+  LOGAM                           @map("logam")
+  KACA                            @map("kaca")
+}
+enum Role {
+  NASABAH
+  ADMIN
+} 
