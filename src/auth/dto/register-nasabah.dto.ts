@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsDateString, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class RegisterNasabahDto {
   @IsString()
@@ -20,4 +20,8 @@ export class RegisterNasabahDto {
   @IsString()
   @IsNotEmpty()
   telp: string;
+
+  @IsOptional()
+  @IsDateString({}, { message: 'Format tanggalLahir harus YYYY-MM-DD (ISO 8601)' })
+  tanggalLahir?: string;
 }

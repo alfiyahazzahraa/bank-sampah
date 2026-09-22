@@ -43,11 +43,12 @@ export class AuthService {
         data: {
           namaNasabah: dto.namaNasabah,
           alamat: dto.alamat,
-          telefon: dto.telp, 
+          telefon: dto.telp,
+          tanggalLahir: dto.tanggalLahir ? new Date(dto.tanggalLahir) : null,
           saldoPoin: 0,
           userId: user.id,
           appKey,
-          foto, 
+          foto,
         },
       });
 
@@ -93,7 +94,7 @@ export class AuthService {
         data: {
           namaUnit: dto.namaUnit,
           namaPengelola: dto.namaPengelola,
-          telefon: dto.telp, 
+          telefon: dto.telp,
           userId: user.id,
           appKey,
         },
