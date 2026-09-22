@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString, IsNumber, IsEnum } from 'class-validator';
+import { Type } from 'class-transformer';
 import { JenisSampah } from '@prisma/client';
 
 export class UpdateKategoriSampahDto {
@@ -10,11 +11,13 @@ export class UpdateKategoriSampahDto {
 
   @ApiPropertyOptional({ example: 4000 })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   hargaPerKg?: number;
 
   @ApiPropertyOptional({ example: 12 })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   poinPerKg?: number;
 
