@@ -1,26 +1,29 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
-import { Type } from 'class-transformer'; 
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateHadiahDto {
+  @ApiProperty({ example: 'Minyak Goreng Bimoli 1 Liter' })
   @IsString()
   @IsNotEmpty()
   namaHadiah: string;
 
-  @IsString()
+  @ApiPropertyOptional({ example: 'Minyak goreng kemasan botol 1 liter' })
   @IsOptional()
+  @IsString()
   deskripsi?: string;
 
-  @Type(() => Number) 
+  @ApiProperty({ example: 100 })
+  @Type(() => Number)
   @IsNumber()
-  @Min(0)
   poinDibutuhkan: number;
 
-  @Type(() => Number) 
+  @ApiProperty({ example: 25 })
+  @Type(() => Number)
   @IsNumber()
-  @Min(0)
   stok: number;
 
-  @IsString()
+  @ApiPropertyOptional({ type: 'string', format: 'binary', description: 'Foto hadiah' })
   @IsOptional()
-  foto?: string;
+  foto?: any;
 }
