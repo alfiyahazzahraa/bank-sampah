@@ -44,7 +44,7 @@ export class SetorSampahService {
     return await this.prisma.setorSampah.create({
       data: {
         kodeSetor,
-        tanggal: new Date(dto.tanggal), // 👈 FIX: pakai tanggal dari client, bukan waktu server
+        tanggal: new Date(),
         status: 'MENUNGGU_KONFIRMASI',
         catatanAdmin: dto.catatan,
         nasabahId,
@@ -66,7 +66,7 @@ export class SetorSampahService {
   async findMySetor(nasabahId: number, appKey: string, bulan?: string) {
     const where: any = { nasabahId, appKey };
 
-    if (bulan) {
+    if (bulan && /^\d{4}-\d{2}$/.test(bulan)) {
       const [year, month] = bulan.split('-').map(Number);
       const startDate = new Date(year, month - 1, 1);
       const endDate = new Date(year, month, 1);
@@ -89,7 +89,7 @@ export class SetorSampahService {
   async findAllAdmin(appKey: string, bulan?: string, status?: string) {
     const where: any = { appKey };
 
-    if (bulan) {
+    if (bulan && /^\d{4}-\d{2}$/.test(bulan)) {
       const [year, month] = bulan.split('-').map(Number);
       const startDate = new Date(year, month - 1, 1);
       const endDate = new Date(year, month, 1);
@@ -152,12 +152,8 @@ export class SetorSampahService {
       throw new NotFoundException('Data penyetoran sampah tidak ditemukan');
     }
 
-    // 👇 FIX: hanya blokir kalau status SUDAH FINAL (selesai/ditolak),
-    //    supaya transisi menunggu_konfirmasi -> diverifikasi -> selesai tetap bisa jalan
-    if (setor.status === 'SELESAI' || setor.status === 'DITOLAK') {
-      throw new BadRequestException(
-        'Transaksi ini sudah final (selesai/ditolak), tidak bisa diverifikasi ulang.',
-      );
+    if (setor.status !== 'MENUNGGU_KONFIRMASI') {
+      throw new BadRequestException('Transaksi ini sudah diverifikasi sebelumnya');
     }
 
     const statusMap: Record<string, 'DIVERIFIKASI' | 'DITOLAK' | 'SELESAI'> = {
