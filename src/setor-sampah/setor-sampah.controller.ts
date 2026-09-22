@@ -1,24 +1,30 @@
-import { Body, Controller, Get, Headers, Param, ParseIntPipe, Post, Put, Query, Request, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Headers, Param, ParseIntPipe, Post, Put, Query, Request, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { ApiTags, ApiBearerAuth, ApiHeader, ApiOperation } from '@nestjs/swagger';
 import { SetorSampahService } from './setor-sampah.service';
 import { CreateSetorSampahDto } from './dto/create-setor-sampah.dto';
 import { VerifySetorDto } from './dto/verify-setor.dto';
 import { AppKeyGuard } from '../common/guards/app-key.guard';
-import { RolesGuard } from '../common/guards/roles.guard';
-import { Roles } from '../common/decorators/roles.decorator';
 
+@ApiTags('Setor Sampah')
+@ApiBearerAuth()
+@ApiHeader({ name: 'x-app-key', required: true, description: 'App Key milik siswa' })
 @Controller('api/v1/setor-sampah')
-@UseGuards(AppKeyGuard, AuthGuard('jwt'), RolesGuard)
+@UseGuards(AppKeyGuard, AuthGuard('jwt'))
 export class SetorSampahController {
   constructor(private readonly setorSampahService: SetorSampahService) {}
 
   @Post('pengajuan')
-  @Roles('NASABAH')
+  @ApiOperation({ summary: 'Nasabah mengajukan penyetoran sampah' })
   async create(
     @Body() dto: CreateSetorSampahDto,
     @Request() req: any,
     @Headers('x-app-key') appKey: string,
   ) {
+    if (req.user.role !== 'NASABAH') {
+      throw new BadRequestException('Hanya Nasabah yang dapat mengajukan penyetoran sampah');
+    }
+
     const nasabahId = req.user.nasabah.id;
     const result = await this.setorSampahService.create(dto, nasabahId, appKey);
     return {
@@ -30,12 +36,16 @@ export class SetorSampahController {
   }
 
   @Get('my-setor')
-  @Roles('NASABAH')
+  @ApiOperation({ summary: 'Nasabah melihat histori penyetoran miliknya sendiri' })
   async findMySetor(
     @Request() req: any,
     @Headers('x-app-key') appKey: string,
     @Query('bulan') bulan?: string,
   ) {
+    if (req.user.role !== 'NASABAH') {
+      throw new BadRequestException('Hanya Nasabah yang dapat mengakses histori ini');
+    }
+
     const nasabahId = req.user.nasabah.id;
     const result = await this.setorSampahService.findMySetor(nasabahId, appKey, bulan);
     return {
@@ -47,12 +57,17 @@ export class SetorSampahController {
   }
 
   @Get('admin/list')
-  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Admin melihat semua pengajuan penyetoran sampah' })
   async findAllAdmin(
+    @Request() req: any,
     @Headers('x-app-key') appKey: string,
     @Query('bulan') bulan?: string,
     @Query('status') status?: string,
   ) {
+    if (req.user.role !== 'ADMIN') {
+      throw new BadRequestException('Hanya Admin yang dapat mengakses data ini');
+    }
+
     const result = await this.setorSampahService.findAllAdmin(appKey, bulan, status);
     return {
       statusCode: 200,
@@ -63,13 +78,17 @@ export class SetorSampahController {
   }
 
   @Put('admin/verify/:id')
-  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Admin memverifikasi & menimbang ulang penyetoran sampah' })
   async verify(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: VerifySetorDto,
     @Request() req: any,
     @Headers('x-app-key') appKey: string,
   ) {
+    if (req.user.role !== 'ADMIN') {
+      throw new BadRequestException('Hanya Admin yang dapat memverifikasi penyetoran sampah');
+    }
+
     const adminBankId = req.user.adminBank.id;
     const result = await this.setorSampahService.verify(id, dto, adminBankId, appKey);
     return {
@@ -81,6 +100,7 @@ export class SetorSampahController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Nasabah/Admin melihat detail satu transaksi penyetoran' })
   async findOne(
     @Param('id', ParseIntPipe) id: number,
     @Headers('x-app-key') appKey: string,

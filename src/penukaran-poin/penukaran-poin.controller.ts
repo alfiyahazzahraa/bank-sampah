@@ -1,16 +1,21 @@
-import { BadRequestException, Body, Controller, Get, Headers, Param, ParseIntPipe, Post, Put, Query, Request, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Headers, Param, ParseIntPipe, Post, Put, Query, Request, UseGuards} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { ApiTags, ApiBearerAuth, ApiHeader, ApiOperation } from '@nestjs/swagger';
 import { PenukaranPoinService } from './penukaran-poin.service';
 import { CreatePenukaranPoinDto } from './dto/create-penukaran-poin.dto';
 import { UpdateStatusPenukaranDto } from './dto/update-penukaran-poin.dto';
 import { AppKeyGuard } from '../common/guards/app-key.guard';
 
+@ApiTags('Penukaran Poin')
+@ApiBearerAuth()
+@ApiHeader({ name: 'x-app-key', required: true, description: 'App Key milik siswa' })
 @Controller('api/v1/penukaran-poin')
 @UseGuards(AppKeyGuard, AuthGuard('jwt'))
 export class PenukaranPoinController {
   constructor(private readonly penukaranPoinService: PenukaranPoinService) {}
 
   @Post('tukar')
+  @ApiOperation({ summary: 'Nasabah menukar poin dengan hadiah' })
   async tukar(
     @Body() dto: CreatePenukaranPoinDto,
     @Request() req: any,
@@ -31,6 +36,7 @@ export class PenukaranPoinController {
   }
 
   @Get('my-penukaran')
+  @ApiOperation({ summary: 'Nasabah melihat histori penukaran poin miliknya' })
   async findMyPenukaran(@Request() req: any, @Headers('x-app-key') appKey: string) {
     if (req.user.role !== 'NASABAH') {
       throw new BadRequestException('Hanya Nasabah yang dapat mengakses histori ini');
@@ -47,6 +53,7 @@ export class PenukaranPoinController {
   }
 
   @Get('admin/list')
+  @ApiOperation({ summary: 'Admin melihat semua transaksi penukaran poin' })
   async findAllAdmin(
     @Request() req: any,
     @Headers('x-app-key') appKey: string,
@@ -66,6 +73,7 @@ export class PenukaranPoinController {
   }
 
   @Put('admin/status/:id')
+  @ApiOperation({ summary: 'Admin mengubah status penukaran poin' })
   async updateStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateStatusPenukaranDto,
@@ -86,6 +94,7 @@ export class PenukaranPoinController {
   }
 
   @Get('nota/:id')
+  @ApiOperation({ summary: 'Nasabah/Admin melihat nota/struk penukaran poin' })
   async findNota(
     @Param('id', ParseIntPipe) id: number,
     @Request() req: any,

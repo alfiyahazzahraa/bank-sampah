@@ -1,18 +1,21 @@
-import { BadRequestException, Body, Controller, Delete, Get, Headers, Param, ParseIntPipe, Post, Put, Request, UseGuards, UseInterceptors,UploadedFile,} from '@nestjs/common';
+import { BadRequestException, Body,Controller, Delete, Get, Headers, Param, ParseIntPipe, Post, Put, Request, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiBearerAuth, ApiHeader, ApiOperation } from '@nestjs/swagger';
 import { NasabahService } from './nasabah.service';
 import { CreateNasabahDto } from './dto/create-nasabah.dto';
 import { UpdateNasabahDto } from './dto/update-nasabah.dto';
 import { AppKeyGuard } from '../common/guards/app-key.guard';
-import { imageUploadOptions } from '../common/helpers/file-upload.helper';
 
+@ApiTags('Admin - CRUD Nasabah')
+@ApiBearerAuth()
+@ApiHeader({ name: 'x-app-key', required: true, description: 'App Key milik siswa' })
 @Controller('api/v1/admin/nasabah')
 @UseGuards(AppKeyGuard, AuthGuard('jwt'))
 export class NasabahController {
   constructor(private readonly nasabahService: NasabahService) {}
 
   @Get()
+  @ApiOperation({ summary: 'Admin melihat semua data nasabah' })
   async findAll(@Request() req: any, @Headers('x-app-key') appKey: string) {
     if (req.user.role !== 'ADMIN') {
       throw new BadRequestException('Hanya Admin yang dapat mengakses data ini');
@@ -27,12 +30,10 @@ export class NasabahController {
     };
   }
 
-  // 👇 FIX: tambah FileInterceptor supaya foto benar-benar tersambung ke service
   @Post()
-  @UseInterceptors(FileInterceptor('foto', imageUploadOptions))
+  @ApiOperation({ summary: 'Admin menambah data nasabah baru' })
   async create(
     @Body() dto: CreateNasabahDto,
-    @UploadedFile() file: Express.Multer.File,
     @Request() req: any,
     @Headers('x-app-key') appKey: string,
   ) {
@@ -40,8 +41,7 @@ export class NasabahController {
       throw new BadRequestException('Hanya Admin yang dapat menambah data nasabah');
     }
 
-    const fotoPath = file ? `/uploads/${file.filename}` : undefined;
-    const result = await this.nasabahService.create(dto, appKey, fotoPath);
+    const result = await this.nasabahService.create(dto, appKey);
     return {
       statusCode: 201,
       success: true,
@@ -51,6 +51,7 @@ export class NasabahController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Admin melihat detail satu nasabah' })
   async findOne(
     @Param('id', ParseIntPipe) id: number,
     @Request() req: any,
@@ -69,13 +70,11 @@ export class NasabahController {
     };
   }
 
-  // 👇 FIX: sama, tambah FileInterceptor di update juga
   @Put(':id')
-  @UseInterceptors(FileInterceptor('foto', imageUploadOptions))
+  @ApiOperation({ summary: 'Admin mengubah data nasabah' })
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateNasabahDto,
-    @UploadedFile() file: Express.Multer.File,
     @Request() req: any,
     @Headers('x-app-key') appKey: string,
   ) {
@@ -83,8 +82,7 @@ export class NasabahController {
       throw new BadRequestException('Hanya Admin yang dapat mengubah data nasabah');
     }
 
-    const fotoPath = file ? `/uploads/${file.filename}` : undefined;
-    const result = await this.nasabahService.update(id, dto, appKey, fotoPath);
+    const result = await this.nasabahService.update(id, dto, appKey);
     return {
       statusCode: 200,
       success: true,
@@ -94,6 +92,7 @@ export class NasabahController {
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Admin menghapus data nasabah' })
   async remove(
     @Param('id', ParseIntPipe) id: number,
     @Request() req: any,
